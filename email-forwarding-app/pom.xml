@@ -11,16 +11,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <camel-version>2.10.5</camel-version>
-    <camel-agent-jar-path>C:/Users/scranefield/Documents/GitHub/camel-agent/target/bdi_agent-1.0-SNAPSHOT.jar</camel-agent-jar-path>
     <h2-jar-path>C:/Program Files (x86)/H2/bin/h2-1.3.154.jar</h2-jar-path>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>bdi</groupId>
-      <artifactId>bdi_agent</artifactId>
+      <groupId>nz.ac.otago.infosci.camelagent.component</groupId>
+      <artifactId>camelagent</artifactId>
       <version>1.0-SNAPSHOT</version>
-      <scope>system</scope>
-      <systemPath>${camel-agent-jar-path}</systemPath>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>

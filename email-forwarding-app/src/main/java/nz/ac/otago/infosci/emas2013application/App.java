@@ -28,6 +28,12 @@ import camelagent.util.ZookeeperContainerNamingStrategy;
 import java.util.Properties;
 import java.util.List;
 import java.io.FileInputStream;
+import javax.swing.JPasswordField;
+import javax.swing.JOptionPane;
+import javax.swing.JDialog;
+import javax.swing.SwingUtilities;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 public class App {
 
@@ -35,28 +41,26 @@ public class App {
 	static String containerId;
 
 	 public static void main(String[] args) throws Exception {
-		container = new AgentContainer(new ZookeeperContainerNamingStrategy("/containers/container", CreateMode.EPHEMERAL_SEQUENTIAL));
-                // JndiRegistry registry = new JndiRegistry(new InitialContext());
-	        // final CamelContext camel = new DefaultCamelContext(registry);
+
+                final String imapServer = "imap.gmail.com";
+                final String smtpServer = "localhost"; // Tested using smtp4dev
+                final String mailAccount = "stephen.cranefield@gmail.com";
+                final String mailPassword = getMailPassword(mailAccount);
+                final String fromAddress = "stephen.cranefield@otago.ac.nz";
+
+                container = new AgentContainer(new ZookeeperContainerNamingStrategy("/containers/container", CreateMode.EPHEMERAL_SEQUENTIAL));
 	        final CamelContext camel = new DefaultCamelContext();
 	        camel.addComponent("agent", new AgentComponent(container));
 
- JdbcDataSource ds = new JdbcDataSource();
- ds.setURL("jdbc:h2:tcp://localhost/~/userinfo");
- ds.setUser("sa");
- ds.setPassword("");
- //registry.bind("userinfo", ds);
+               JdbcDataSource ds = new JdbcDataSource();
+               ds.setURL("jdbc:h2:tcp://localhost/~/userinfo");
+               ds.setUser("sa");
+               ds.setPassword("");
 
-
- Registry registry = camel.getRegistry();
-if (registry instanceof PropertyPlaceholderDelegateRegistry)
-registry =
-((PropertyPlaceholderDelegateRegistry)registry).getRegistry();
-
-
- ((JndiRegistry) registry).bind("userinfo", ds);
-
-
+               Registry registry = camel.getRegistry();
+               if (registry instanceof PropertyPlaceholderDelegateRegistry)
+                   registry = ((PropertyPlaceholderDelegateRegistry)registry).getRegistry();
+               ((JndiRegistry) registry).bind("userinfo", ds);
 
                 //ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616");
 	        //camel.addComponent("jms", JmsComponent.jmsComponentAutoAcknowledge(connectionFactory));
@@ -70,19 +74,6 @@ registry =
 			zkServerProp = "127.0.0.1:2181";
 		}
 		final String zkserver = zkServerProp;
-/*
-                final String imapServer = "imap.staff.otago.ac.nz";
-                final String smtpServer = "localhost";
-                final String mailAccount = "crast78p";
-                final String mailPassword = "woktakobny";
-                final String fromAddress = "stephen.cranefield@otago.ac.nz";
-*/
-                final String imapServer = "imap.gmail.com";
-                final String smtpServer = "localhost";
-                final String mailAccount = "stephen.cranefield@gmail.com";
-                final String mailPassword = "hq5SiGHCUgew";
-                final String fromAddress = "stephen.cranefield@otago.ac.nz";
-
 
 	        /* Create the routes */
 	        camel.addRoutes(new RouteBuilder() {
@@ -223,4 +214,33 @@ registry =
 
 	        System.out.println("... ready.");
 	    }
+
+         private static String getMailPassword(String account) {
+             // Password reading code from http://stackoverflow.com/questions/8881213/joptionpane-to-get-password:
+
+             final JPasswordField jpf = new JPasswordField();
+             JOptionPane jop = new JOptionPane(jpf, JOptionPane.QUESTION_MESSAGE,
+             JOptionPane.OK_CANCEL_OPTION);
+             JDialog dialog = jop.createDialog("Enter password for " + account);
+             dialog.addComponentListener(new ComponentAdapter() {
+                 @Override
+                  public void componentShown(ComponentEvent e) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                            public void run() {
+                                jpf.requestFocusInWindow();
+                            }
+                        });
+                 }
+             });
+             dialog.setVisible(true);
+             int result = (Integer) jop.getValue();
+             dialog.dispose();
+             char[] password = null;
+             if (result == JOptionPane.OK_OPTION) {
+                password = jpf.getPassword();
+             }
+
+             return String.valueOf(password);
+         }
 }

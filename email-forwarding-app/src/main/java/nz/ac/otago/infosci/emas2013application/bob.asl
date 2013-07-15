@@ -27,17 +27,24 @@ sublist([H|T], Start, NumToTake, SubList) :-
 +!start
    <- .my_name(Name);
       .println("Hi from ", Name);
-      rules.add_rule("relevant(crast78p, From, _, _) :- .substring('Cranefield', From)");
-      .wait(4000);
+      camelagent.syncAction(get_users(Users));
+      .println("Retrieved users: ", Users);
+      -+users(Users);
+//      camelagent.syncAction(get_global_rules(RulesAsStrings));
+//      .println("Retrieved global rules: ", RulesAsStrings);
+//      for (.member(RuleAsString, RulesAsStrings)) {
+//         rules.add_rule(RuleAsString);
+//      };
+      rules.get_rules(_, R);
+      .print(R);
+     .wait(1000);
       register.
 
-+agents(L) : .length(L, 0) <-
-  .println("There are no agents detected (not even me!)");
-  .abolish(my_users(_)).
++registered_agents(L) : .my_name(Me) & not .member(Me, L) <-
+    .abolish(my_users(_)).
 
-+agents(L) : .length(L, NumAgents) & NumAgents > 0 <-
-  .my_name(Me);
-  ?index(Me, L, I);
++registered_agents(L): .my_name(Me) & index(Me, L, I) <-
+  .length(L, NumAgents);
   .println("Agents: ", L);
   .println("My index: ", I);
   ?users(Users);
@@ -52,7 +59,16 @@ sublist([H|T], Start, NumToTake, SubList) :-
     MyUsers = MainDeal;
   }
   -+my_users(MyUsers);
-  .println("My users: ", MyUsers).
+  .println("My users: ", MyUsers);
+   camelagent.syncAction(get_rules(MyUsers, RulesAsStrings));
+   // Update belief base with new rules (replacing old ones)
+   .abolish(role(_,_,_));
+   .abolish(relevant(_,_,_,_));
+   for (.member(RuleAsString, RulesAsStrings)) {
+     rules.add_rule(RuleAsString);
+   };
+   rules.get_rules(_, R);
+   .print(R).
 
 +!check_relevance(ID, From, Subject, Body) <-
     ?my_users(Users);
@@ -61,3 +77,4 @@ sublist([H|T], Start, NumToTake, SubList) :-
      if (RelevantUsers \== []) {
        .send(router, tell, relevant(ID, RelevantUsers))
      }.
+
