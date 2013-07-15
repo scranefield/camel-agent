@@ -17,7 +17,7 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent;
+package camelagent;
 
 
 import jason.asSemantics.ActionExec;

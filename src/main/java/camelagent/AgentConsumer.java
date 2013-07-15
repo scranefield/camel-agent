@@ -17,16 +17,16 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent;
+package camelagent;
 
 
 import jason.asSemantics.ActionExec;
 import jason.asSemantics.Message;
 import jason.asSemantics.Unifier;
-import jason.asSyntax.Atom;
 import jason.asSyntax.ListTerm;
 import jason.asSyntax.Term;
 import jason.asSyntax.Literal;
+import jason.asSyntax.ASSyntax;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,28 +54,28 @@ public class AgentConsumer extends DefaultConsumer {
     
     /**
      * @param agentName
+     * @param actionName
      * @param parameters
      * @param unifier
      * @return
      * Maps internal Jason agent actions to camel messages
      */
-    public Object agentInternallyActed(String agentName, Term[] parameters, Unifier unifier)
+    public Object agentInternallyActed(String agentName, String actionName, List<Term> parameters, Unifier unifier)
     {       
-    	
     	Object actionsucceeded = true; 
-		Exchange exchange = endpoint.createExchange();
+	Exchange exchange = endpoint.createExchange();
 		
 		// Agent action can only be processed by an endpoint of type "action"
-    	if (endpoint.getUriOption().contains("action")) {    		
+    	if (endpoint.getUriOption().contains("action")) {
+
     		try {
     			
-    			List<String> params = new ArrayList<String>();
-    			for(int i=1;i<parameters.length;i++)
+    			List<String> paramsAsStrings = new ArrayList<String>();
+                        for (Term t : parameters)
     			{
-    				if (!parameters[i].isVar())
-    					params.add(parameters[i].toString());
+    			    paramsAsStrings.add(t.toString());
     			}    			    			    			
-    			sendActionToCamel(agentName, params,  parameters[0].toString(), exchange, "");
+    			sendActionToCamel(agentName, actionName, paramsAsStrings, exchange, "");
     			
     		} catch (Exception e) {
     			
@@ -95,19 +95,25 @@ public class AgentConsumer extends DefaultConsumer {
     				
     				//Unification is applicable to InOut exchanges only. This waits for the return message from the exchange 
     				else if (ep.equals("InOut"))
-    				{    					
+    				{
     					if (exchange.hasOut())
     					{
     						List<String[]> mappings = getResultHeaderSplitted();
     						for(String[] mapping : mappings)
     						{
-    							int unPos = Integer.parseInt(mapping[1]);    							
+                                                        int unPos = Integer.parseInt(mapping[1]);
     							String headerVal = mapping[0]; 
     							
 								//ArrayList<String> l = (ArrayList<String>)exchange.getIn().getHeader(headerVal);
     							//Iterator<String> it = l.iterator();
-    							String unVal = exchange.getIn().getHeader(headerVal).toString();    
-    							unifier.unifies(parameters[unPos], new Atom(unVal));
+    							String unVal = exchange.getIn().getHeader(headerVal).toString();
+                                                        try {
+                                                            unifier.unifies(parameters.get(unPos), ASSyntax.parseTerm(unVal));
+                                                        }
+                                                        catch(jason.asSyntax.parser.ParseException e) {
+                                                            System.out.println("Error parsing result header from synchronous InOut action: " + unVal);
+                                                            return false;
+                                                        }
     						}    						
     						return true;
     					}
@@ -134,16 +140,16 @@ public class AgentConsumer extends DefaultConsumer {
     			ActionExec action = jasonAction.getAction();
     			    			
     			String agName = jasonAction.getAgName();    			
-    			List<String> params = new ArrayList<String>();
+    			List<String> paramsAsStrings = new ArrayList<String>();
     			for(Term t : action.getActionTerm().getTerms())
-    				params.add(t.toString());
+    				paramsAsStrings.add(t.toString());
     			
     			//extract annotations
     			List<Term> ann =  action.getActionTerm().getAnnots();    	
     			String annots = "";
     			if (ann != null)
     				annots = ann.toString();//StringUtils.join(ann, ',');    					
-    			sendActionToCamel(agName, params, action.getActionTerm().getFunctor(), exchange, annots);    			    			   			
+    			sendActionToCamel(agName, action.getActionTerm().getFunctor(), paramsAsStrings, exchange, annots);
     			
     		} catch (Exception e) {
     			
@@ -210,7 +216,7 @@ public class AgentConsumer extends DefaultConsumer {
 					 else
 						 headerInfo.put("annotations", "");
 				} catch(ClassCastException e) {}
-				
+
 				//COmpare the message content with uri options
 				Matcher matcher =endpoint.getBodyMatcher(message.getPropCont().toString());
 							
@@ -283,28 +289,35 @@ public class AgentConsumer extends DefaultConsumer {
     
     /**
      * @param agName
-     * @param params
      * @param actionName
+     * @param paramsAStrings
      * @param exchange
      * @param annotations
      * @throws Exception
      * Contains common logic to send internal and external actions as camel messages
      */
-    private void sendActionToCamel (String agName, List<String> params, String actionName, Exchange exchange, String annotations) throws Exception
+    private void sendActionToCamel (String agName, String actionName, List<String> paramsAsStrings, Exchange exchange, String annotations) throws Exception
     {
     	//create action header
 		HashMap<String, Object> headerInfo = new HashMap<String, Object>();
 		headerInfo.put("actor", agName);
 		headerInfo.put("actionName", actionName);
-		headerInfo.put("params", params);
+		headerInfo.put("params", paramsAsStrings);
 		headerInfo.put("annotations", annotations);
 		exchange.getIn().setHeaders(headerInfo);
 		
 		String ea = endpoint.getActor();
-		Pattern pattern = Pattern.compile(endpoint.getMatch());
-		Matcher matcher = pattern.matcher(actionName);
+                String ean = endpoint.getActionName();
+                String match = endpoint.getMatch();
+
+                boolean matchOk = true;
+                if (match != null) {
+		  Pattern pattern = Pattern.compile(match);
+		  Matcher matcher = pattern.matcher(actionName);
+                  matchOk = matcher.find();
+                }
 		
-		if ((agName.equals(ea) || ea==null) && matcher.find())
+		if ((agName.equals(ea) || ea==null) && (actionName.equals(ean) || ean==null) && matchOk)
 		{
 			if (endpoint.getReplace() != null)
 				headerInfo.put("actionName", endpoint.getReplace());

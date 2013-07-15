@@ -1,4 +1,4 @@
-package agent;
+package camelagent;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
@@ -7,7 +7,7 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.zookeeper.CreateMode;
 
-import agent.utils.ZookeeperContainerNamingStrategy;
+import camelagent.util.ZookeeperContainerNamingStrategy;
 
 
 public class MainApp {

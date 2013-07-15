@@ -16,7 +16,7 @@
 //    You should have received a copy of the GNU Lesser General Public License        /
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
-package agent;
+package camelagent;
 
 
 import jason.asSemantics.Message;
@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
-import agent.utils.ContainerNamingStrategy;
+import camelagent.util.ContainerNamingStrategy;
 
 /**
  * @author surangika
@@ -129,7 +129,7 @@ public class AgentContainer {
 	 * receive the percepts from the camel exchange, and pass it to a particular agent or all the agents, based on the value of the receiver parameter
 	 */
 	public void getCamelpercepts(String content, String receiver, String annotations, String updateMode, String persistent)
-	{		
+	{
 		try
 		{	
 			Iterator<SimpleJasonAgent> it = agentList.iterator();
@@ -140,12 +140,15 @@ public class AgentContainer {
 					if (a.getAgName().equals(receiver))
 						a.updatePerceptList(content, annotations, updateMode, persistent);
 				}
-            	else
-            		a.updatePerceptList(content, annotations, updateMode, persistent);
+            	else {
+                    System.out.println("Updating percepts for agent " + a.getAgName() + "; content = " + content);
+                    a.updatePerceptList(content, annotations, updateMode, persistent);
+                }
             }
 		}
 		catch(Exception e)
-		{			
+		{
+                    System.out.println("Exception in AgentContainer.getCamelPercepts: " + e.getMessage());
 		}
 	}
 		

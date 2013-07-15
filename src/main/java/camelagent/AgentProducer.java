@@ -17,7 +17,7 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent;
+package camelagent;
 
 
 import jason.asSemantics.Message;
@@ -92,7 +92,7 @@ public class AgentProducer extends DefaultProducer {
     	}    		
     	if (endpoint.getUriOption().contains("percept"))
     	{  
-    		String r = "";
+                String r = "";
     		String persistent = endpoint.getPersistent();
     		String updateMode = endpoint.getUpdateMode();
     		String annots = endpoint.getAnnotations();
@@ -104,8 +104,9 @@ public class AgentProducer extends DefaultProducer {
     			persistent = (String)headerInfo.get("persistent");
     		if(headerInfo.containsKey("updateMode"))
     			updateMode = (String)headerInfo.get("updateMode");
-    		if (r.equals(er) || er==null)
-    			this.bdi_component.getContainer().getCamelpercepts(content, r, annots, updateMode, persistent);
+                System.out.println("Percept update mode: " + updateMode);
+    		if (er==null || r.equals(er))
+                        this.bdi_component.getContainer().getCamelpercepts(content, r, annots, updateMode, persistent);
     	}    
     }
     
@@ -119,9 +120,11 @@ public class AgentProducer extends DefaultProducer {
      * Sends the message to the agent if the message content matches with the uri information
      */
     private void sendMatchedMessagetoJason(Matcher matcher, String content, String reciever, String illoc, String sender, String annotations) 
-    {    	
-    	String matchedS = endpoint.getReplacedContent(matcher, content);
+    {
+        String matchedS = endpoint.getReplacedContent(matcher, content);
     	matchedS = matchedS.replace("\n", "").replace("\r", "");
+
+        System.out.println("Sending message to Jason: " + matchedS);
     	
     	Message m;
 		try {

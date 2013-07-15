@@ -17,27 +17,17 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent;
+package camelagent.util;
 
-import java.util.Map;
-
-import org.apache.camel.Endpoint;
-import org.apache.camel.impl.DefaultComponent;
-
-public class AgentComponent extends DefaultComponent {	
-	private AgentContainer container;
-	public AgentComponent(AgentContainer container)
-	{
-		this.container = container;
-	}
+/**
+ * @author surangika
+ *Interface to generate a name for the AgentContainer, which will be used by the agents
+ */
+public interface ContainerNamingStrategy {
+	/**
+	 * @return
+	 * Return the name of the AgentContainer
+	 */
+	public String getName();
 	
-	public AgentContainer getContainer()
-	{
-		return this.container;
-	}
-    protected Endpoint createEndpoint(String uri, String remaining, Map<String, Object> parameters) throws Exception {    	
-        Endpoint endpoint = new AgentEndpoint(uri, this);
-        setProperties(endpoint, parameters);
-        return endpoint;
-    }      
 }

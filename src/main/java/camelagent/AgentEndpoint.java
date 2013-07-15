@@ -17,7 +17,7 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent;
+package camelagent;
 
 import java.util.Enumeration;
 import java.util.regex.Matcher;
@@ -37,6 +37,7 @@ public class AgentEndpoint extends DefaultEndpoint {
 	private String ilf;
 	private String sender;
 	private String receiver;
+        private String actionName;
 	private String actor;
 	private String annotations;	
 	private String uriOption;
@@ -135,7 +136,18 @@ public class AgentEndpoint extends DefaultEndpoint {
     public String getReceiver()
     {
     	return receiver;
-    } 
+    }
+
+    public void setActionName(String actionName)
+    {
+    	this.actionName = actionName;
+    }
+
+    public String getActionName()
+    {
+    	return actionName;
+    }
+
     
     public void setActor(String actor)
     {
@@ -223,10 +235,16 @@ public class AgentEndpoint extends DefaultEndpoint {
      */
     public String getReplacedContent(Matcher matcher, String bodyContent)
     {
-    	String matchedString = "";
+        System.out.println();
+        if (matcher == null) return bodyContent;
+
+        String matchedString;
     	
     	if (this.replace != null)
-		{    		
+        {
+
+                matchedString = matcher.replaceFirst(this.replace);
+/*
     		String[] replaces = this.replace.split(",");
     		StringBuilder sbuilder = new StringBuilder();
     		for (int i=0;i<replaces.length;i++)
@@ -243,11 +261,14 @@ public class AgentEndpoint extends DefaultEndpoint {
         		else
         			replaceS = replace;
         		sbuilder.append(replaceS + ":");
+
     		}
     		matchedString = sbuilder.toString();
-		}
-		else
-			matchedString = bodyContent;
-    	return matchedString;
-    }  
+ */
+
+	}
+	else matchedString = bodyContent;
+        
+  	return matchedString;
+    }
 }

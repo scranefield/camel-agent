@@ -17,7 +17,7 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent;
+package camelagent;
 
 import jason.architecture.AgArch;
 import jason.asSemantics.ActionExec;
@@ -131,7 +131,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
      */
     public void updatePerceptList(String percept, String annotations, String updateMode, String persistent)
     {    	
-    	Literal l = Literal.parseLiteral(percept);    	
+    	Literal l = Literal.parseLiteral(percept);
     	
 		List<String> annots = Arrays.asList(annotations.split(","));
     	
@@ -144,7 +144,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
 					if (as != "")
 						l.addAnnot(ASSyntax.parseTerm(as));
 				} catch (Exception e) {
-					// TODO: handle exception
+					System.err.println("Exception in SimpleJasonAgent.updatePerceptList: " + e.getMessage());
 				}
 			 }			
 		 }
@@ -158,7 +158,8 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     		}
     	}
     	    	
-    	if(persistent.equals("true")){
+        else if(persistent.equals("true"))
+        {
     		//If updateMode is + (default option) and an identical percept is not already in the persistent queue, add the percept to the persistent queue 
     		if(updateMode.equals("+"))
     		{
@@ -177,8 +178,8 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
 					}
 				}
     		}
-    		//If the update mode is -+, remove all the percepts having the same functor and arity form the persistent queue, and add the received percept
-    		else if(updateMode.equals("-+"))
+    		//If the update mode is -+ (changed to "overwrite" as "+" turns into a space in Camel endpoint URIs), remove all the percepts having the same functor and arity form the persistent queue, and add the received percept
+    		else if(updateMode.equals("overwrite"))
         	{
         		synchronized (pers_percepts) {        			
     				Iterator<Literal> i = pers_percepts.iterator();
@@ -187,7 +188,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     				   if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity())
     					   i.remove();
     				}
-    				pers_percepts.offer(l);
+                                pers_percepts.offer(l);
         		}
         	}    		
     	}
@@ -238,7 +239,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
         			r = true;
         			action.setResult(true);
                 	feedback.add(action);
-                	break;
+                	//break;
         		}        			
         	}
         	if (!r)
@@ -271,14 +272,14 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     @Override
     public void sendMsg(jason.asSemantics.Message m) throws Exception {   
     	//Send to Camel exchange if the receipient name starts with container
-    	if (m.getReceiver().startsWith("container"))
+        //if (m.getReceiver().startsWith("container"))
     	{
     		for(AgentConsumer myConsumer: getValidConsumers("message"))
             	myConsumer.agentMessaged(m);
     	}
     	//Else send as a local Jason message
-    	else 
-    		container.getCamelMessages(m, m.getReceiver());    		
+    	//else
+    	//	container.getCamelMessages(m, m.getReceiver());
     }
 
     @Override

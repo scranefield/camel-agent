@@ -17,7 +17,7 @@
 //    along with camel_jason.  If not, see <http://www.gnu.org/licenses/>.            /  
 ///////////////////////////////////////////////////////////////////////////////////////
 
-package agent.utils;
+package camelagent.util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
