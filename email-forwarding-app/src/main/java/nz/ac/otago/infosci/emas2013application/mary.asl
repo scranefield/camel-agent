@@ -78,3 +78,5 @@ sublist([H|T], Start, NumToTake, SubList) :-
        .send(router, tell, relevant(ID, RelevantUsers))
      }.
 
++tick(N) <-
+  .println("Mary sees: ", tick(N)).

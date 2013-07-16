@@ -40,6 +40,8 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 
 /**
@@ -133,7 +135,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     {    	
     	Literal l = Literal.parseLiteral(percept);
     	
-		List<String> annots = Arrays.asList(annotations.split(","));
+	List<String> annots = Arrays.asList(annotations.split(","));
     	
     	//Add the separately recieved annotations to the literal
     	if (l != null && annots != null)
@@ -141,7 +143,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     		 for(String as : annots)
 			 {
 				 try {
-					if (as != "")
+					if (!as.equals(""))
 						l.addAnnot(ASSyntax.parseTerm(as));
 				} catch (Exception e) {
 					System.err.println("Exception in SimpleJasonAgent.updatePerceptList: " + e.getMessage());
@@ -149,49 +151,83 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
 			 }			
 		 }
     	
-    	//Transient percepts are simply added to the transient queue
     	if(persistent.equals("false"))
     	{
-    		synchronized(temp_percepts)
-    		{
-    			temp_percepts.offer(l);
-    		}
+    	    updatePercepts(updateMode, l, temp_percepts);
     	}
-    	    	
-        else if(persistent.equals("true"))
+    	else if(persistent.equals("true"))
         {
-    		//If updateMode is + (default option) and an identical percept is not already in the persistent queue, add the percept to the persistent queue 
-    		if(updateMode.equals("+"))
-    		{
-    			synchronized (pers_percepts) {
-					boolean lit_exists = false;
-					Iterator<Literal> i = pers_percepts.iterator();
-					while (i.hasNext()) {
-						Literal lit = i.next();
-						if (lit.compareTo(l) != -1) {
-							lit_exists = true;
-							break;
-						}
-					}
-					if (!lit_exists){
-						pers_percepts.offer(l);
-					}
-				}
-    		}
-    		//If the update mode is -+ (changed to "overwrite" as "+" turns into a space in Camel endpoint URIs), remove all the percepts having the same functor and arity form the persistent queue, and add the received percept
-    		else if(updateMode.equals("overwrite"))
-        	{
-        		synchronized (pers_percepts) {        			
-    				Iterator<Literal> i = pers_percepts.iterator();
-    				while (i.hasNext()) {
-    				   Literal lit = i.next();
-    				   if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity())
-    					   i.remove();
-    				}
-                                pers_percepts.offer(l);
-        		}
-        	}    		
-    	}
+            updatePercepts(updateMode, l, pers_percepts);
+        }
+    }
+
+    private void updatePercepts(String updateMode, Literal l, Queue<Literal> perceptQueue) {
+        //If updateMode is "add" (default option) and an identical percept is not already in the persistent queue, add the percept to the persistent queue
+        if (updateMode.equals("add")) {
+            synchronized (perceptQueue) {
+                boolean lit_exists = false;
+                Iterator<Literal> i = perceptQueue.iterator();
+                while (i.hasNext()) {
+                    Literal lit = i.next();
+                    if (lit.equals(l)) {
+                        lit_exists = true;
+                        break;
+                    }
+                }
+                if (!lit_exists) {
+                    System.out.println("*** Adding percept: " + l);
+                    perceptQueue.offer(l);
+                }
+            }
+        } else if (updateMode.equals("replace")) {
+            synchronized (perceptQueue) {
+                Iterator<Literal> i = perceptQueue.iterator();
+                while (i.hasNext()) {
+                    Literal lit = i.next();
+                    if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
+                        i.remove();
+                    }
+                }
+                System.out.println("*** Adding percept: " + l);
+                perceptQueue.offer(l);
+            }
+        } else {
+            Matcher m = Pattern.compile("delete(\\([=_](,[=_])*\\))?").matcher(updateMode);
+            if (m.matches()) {
+                String[] argMatchMode;
+                if (m.start(1) == -1) {
+                    // No arguments provided for 'delete'. Assume all args of queued percept must match new percept for queued percept to be deleted
+                    argMatchMode = new String[l.getArity()];
+                    Arrays.fill(argMatchMode, "=");
+                } else {
+                    String deleteArgsWithoutParens = updateMode.substring(m.start(1) + 1, m.end(1) - 1);
+                    argMatchMode = deleteArgsWithoutParens.split(",");
+                }
+                System.out.println("*** delete args: " + Arrays.toString(argMatchMode));
+                System.out.println("*** percept to delete: " + l);
+                synchronized (perceptQueue) {
+                    Iterator<Literal> it = perceptQueue.iterator();
+                    while (it.hasNext()) {
+                        Literal lit = it.next();
+                        System.out.println("*** Queued percept being checked: " + lit);
+                        if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
+                            boolean delete = true;
+                            for (int i = 0; i < lit.getArity(); i++) {
+                                if (argMatchMode[i].equals("=") && !l.getTerm(i).equals(lit.getTerm(i))) {
+                                      delete = false;
+                                }
+                            }
+                            if (delete) {
+                                System.out.println("*** Deleting percept: " + lit);
+                                it.remove();
+                            }
+                        }
+                    }
+                }
+            } else {
+                System.out.println("Bad value for updateMode " + updateMode + "(percept: " + l + ")");
+            }
+        }
     }
 
     // Agent calls this method to receive the transient and persistent percepts 

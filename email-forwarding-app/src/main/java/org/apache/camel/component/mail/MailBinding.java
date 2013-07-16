@@ -13,6 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * 
+ * This file has been modifed from the original that is part of the Apache
+ * Camel distribution by Stephen Cranefield, July 2013. Search for "Stephen
+ * Cranefield" to find changes.
  */
 package org.apache.camel.component.mail;
 
@@ -117,12 +121,12 @@ public class MailBinding {
             String from = endpoint.getConfiguration().getFrom();
             mimeMessage.setFrom(asEncodedInternetAddress(from, determineCharSet(endpoint.getConfiguration(), exchange)));
         }
-// Added by Stephen Cranefield
-        System.out.println("In hacked MailBinding");
+// The following lines were added by Stephen Cranefield
         if (exchange.getIn().getBody() instanceof Multipart) {
             mimeMessage.setContent(exchange.getIn().getBody(Multipart.class));
         }
         else
+// End of addition by Stephen Cranefield
         // if there is an alternative body provided, set up a mime multipart alternative message
         if (hasAlternativeBody(endpoint.getConfiguration(), exchange)) {
             createMultipartAlternativeMessage(mimeMessage, endpoint.getConfiguration(), exchange);

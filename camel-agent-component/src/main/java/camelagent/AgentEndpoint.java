@@ -57,7 +57,7 @@ public class AgentEndpoint extends DefaultEndpoint {
         setUriOption();
         //defaults
         persistent = "false";
-        updateMode = "+";
+        updateMode = "add";
         annotations = "";
     }  
     

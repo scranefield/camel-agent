@@ -37,16 +37,15 @@ import java.awt.event.ComponentEvent;
 
 public class App {
 
-	public static AgentContainer container;
+	static AgentContainer container;
 	static String containerId;
+        final static String imapServer = "imap.gmail.com";
+        final static String smtpServer = "localhost"; // Tested using smtp4dev
+        final static String mailAccount = "stephen.cranefield@gmail.com";
+        final static String mailPassword = getMailPassword(mailAccount);
+        final static String mailDomain = "otago.ac.nz";
 
 	 public static void main(String[] args) throws Exception {
-
-                final String imapServer = "imap.gmail.com";
-                final String smtpServer = "localhost"; // Tested using smtp4dev
-                final String mailAccount = "stephen.cranefield@gmail.com";
-                final String mailPassword = getMailPassword(mailAccount);
-                final String fromAddress = "stephen.cranefield@otago.ac.nz";
 
                 container = new AgentContainer(new ZookeeperContainerNamingStrategy("/containers/container", CreateMode.EPHEMERAL_SEQUENTIAL));
 	        final CamelContext camel = new DefaultCamelContext();
@@ -132,10 +131,10 @@ public class App {
                       .aggregate(header("numChildren"), new ArrayListAggregationStrategy())
                       .completionSize(header("numChildren"))
                       .setBody(simple("registered_agents(${bodyAs(String)})"))
-                      .to("agent:percept?persistent=true&updateMode=overwrite");
+                      .to("agent:percept?persistent=true&updateMode=replace");
 
                       // Poll for email messages
-                      from("imaps://" + imapServer + "?username=" + mailAccount + "&password="+mailPassword+"&delete=false$closeFolder=false&connectionTimeout=60000")
+                      from("imaps://" + imapServer + "?username=" + mailAccount + "&password="+mailPassword+"&delete=false&closeFolder=false&connectionTimeout=60000")
                       .routeId("fetchmail")
                       .noAutoStartup()
                       .setHeader("id", simple("\"${id}\""))
@@ -175,7 +174,7 @@ public class App {
                        .aggregate(header("id"),
                                   new SetUnionAggregationStrategy()
                        ).completionTimeout(2000)
-                       .setHeader("to").groovy("request.getBody(String)[1..-2]")
+                       .setHeader("to").groovy("request.getBody(String)[1..-2].tokenize(',').collect({\"${it}@${nz.ac.otago.infosci.emas2013application.App.mailDomain}\"}).join(',')")
                        .process(new Processor() {
                           public void process(Exchange exchange) throws Exception {
                               System.out.println("Aggregated to header: " + exchange.getIn().getHeader("to"));
@@ -188,7 +187,7 @@ public class App {
                         .aggregate(header("id"),
                                    new CombineBodyAndHeaderAggregationStrategy("to")
                         ).completionSize(2)
-                        .setHeader("from", constant(fromAddress))
+                        .setHeader("from", constant(mailAccount))
                         .process(new Processor() {
                           public void process(Exchange exchange) throws Exception {
                               System.out.println("Outgoing mail headers: " + exchange.getIn().getHeaders());
@@ -197,6 +196,16 @@ public class App {
                         })
                         .to("smtp://" + smtpServer + "?username=" + mailAccount + "&password=" + mailPassword);
 
+                        from("timer:test?period=500")
+                        .transform(simple("tick(\"${property.CamelTimerCounter}\")"))
+                        .to("agent:percept?persistent=true&updateMode=add");
+
+                        from("timer:test?period=500")
+                        .choice()
+                                .when().ognl("exchange.getProperty(\"CamelTimerCounter\") % 2 == 0")
+                                .log("${property.CamelTimerCounter} is even - deleting")
+                                .transform(simple("tick(\"${property.CamelTimerCounter}\")"))
+                                .to("agent:percept?persistent=true&updateMode=delete(=)");
 	            }
 	        });
 
