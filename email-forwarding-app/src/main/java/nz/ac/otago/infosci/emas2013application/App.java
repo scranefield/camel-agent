@@ -12,9 +12,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.camel.spi.Registry;
 import org.apache.camel.impl.JndiRegistry;
 import org.apache.camel.impl.PropertyPlaceholderDelegateRegistry;
-//import org.apache.camel.util.jndi.CamelInitialContextFactory;
-//import javax.naming.Context;
-//import javax.naming.InitialContext;
 import org.h2.jdbcx.JdbcDataSource;
 
 //import org.apache.camel.component.jms.JmsComponent;
