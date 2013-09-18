@@ -12,5 +12,5 @@ This is a maven project, containing these modules:
 
 * email-forwarding-app: This module contains a sample Camel router that monitors a specific email account and asks agents to recommend who to forward messages to. The application contains Camel routes that interact with Apache ZooKeeper, the H2 database engine, and a mailer server (via IMAP and SMTP). See http://arxiv.org/abs/1302.1937 for more information about this application.
 
-The email-forwarding-app module contains some modified code from Apache Camel, which is included here under the Apache License, Version 2.0. See the file ApacheLicence2.0.txt within that module.
-
+The email-forwarding-app module contains some modified code from Apache Camel, which is included here under the Apache License, Version 2.0. See the file ApacheLicence2.0.txt within that module. The code in the rules package is copied from the "tell-rule" demo in the distribution of Jason 1.3.8 (http://jason.sourceforge.net/). These files are
+redistributed under the LGPL - see the licence file in the source code folder for that package.

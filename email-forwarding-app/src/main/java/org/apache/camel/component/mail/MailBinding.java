@@ -122,6 +122,7 @@ public class MailBinding {
             mimeMessage.setFrom(asEncodedInternetAddress(from, determineCharSet(endpoint.getConfiguration(), exchange)));
         }
 // The following lines were added by Stephen Cranefield
+        LOG.trace("Inside hacked MailBindingOK");
         if (exchange.getIn().getBody() instanceof Multipart) {
             mimeMessage.setContent(exchange.getIn().getBody(Multipart.class));
         }

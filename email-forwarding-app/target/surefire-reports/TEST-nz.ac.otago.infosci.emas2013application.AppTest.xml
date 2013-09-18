@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite failures="0" time="0.031" errors="0" skipped="0" tests="1" name="nz.ac.otago.infosci.emas2013application.AppTest">
+<testsuite failures="0" time="0.063" errors="0" skipped="0" tests="1" name="nz.ac.otago.infosci.emas2013application.AppTest">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.7.0_10\jre\bin"/>
@@ -20,7 +20,7 @@
     <property name="basedir" value="C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app"/>
     <property name="java.endorsed.dirs" value="C:\Program Files\Java\jdk1.7.0_10\jre\lib\endorsed"/>
     <property name="os.arch" value="amd64"/>
-    <property name="surefire.real.class.path" value="C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefirebooter6114691228674559129.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefirebooter5512114806130184215.jar"/>
     <property name="java.io.tmpdir" value="C:\Users\SCRANE~1\AppData\Local\Temp\"/>
     <property name="line.separator" value="
 "/>
@@ -44,7 +44,7 @@
     <property name="java.vm.specification.version" value="1.7"/>
     <property name="sun.arch.data.model" value="64"/>
     <property name="java.home" value="C:\Program Files\Java\jdk1.7.0_10\jre"/>
-    <property name="sun.java.command" value="C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefirebooter6114691228674559129.jar C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefire6628401833619863251tmp C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefire3127841669841161208tmp"/>
+    <property name="sun.java.command" value="C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefirebooter5512114806130184215.jar C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefire3040960464949957060tmp C:\Users\scranefield\Documents\GitHub\camel-agent\email-forwarding-app\target\surefire\surefire5907784674697691364tmp"/>
     <property name="netbeans.execution" value="true"/>
     <property name="java.specification.vendor" value="Oracle Corporation"/>
     <property name="user.language" value="en"/>
@@ -62,5 +62,5 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase time="0.001" classname="nz.ac.otago.infosci.emas2013application.AppTest" name="testApp"/>
+  <testcase time="0.003" classname="nz.ac.otago.infosci.emas2013application.AppTest" name="testApp"/>
 </testsuite>

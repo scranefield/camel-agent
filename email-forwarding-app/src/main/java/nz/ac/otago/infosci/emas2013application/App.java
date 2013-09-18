@@ -192,17 +192,6 @@ public class App {
                         }
                         })
                         .to("smtp://" + smtpServer + "?username=" + mailAccount + "&password=" + mailPassword);
-
-                        from("timer:test?period=500")
-                        .transform(simple("tick(\"${property.CamelTimerCounter}\")"))
-                        .to("agent:percept?persistent=true&updateMode=add");
-
-                        from("timer:test?period=500")
-                        .choice()
-                                .when().ognl("exchange.getProperty(\"CamelTimerCounter\") % 2 == 0")
-                                .log("${property.CamelTimerCounter} is even - deleting")
-                                .transform(simple("tick(\"${property.CamelTimerCounter}\")"))
-                                .to("agent:percept?persistent=true&updateMode=delete(=)");
 	            }
 	        });
 
