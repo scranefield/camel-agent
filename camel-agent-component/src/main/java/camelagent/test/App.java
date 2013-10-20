@@ -27,7 +27,7 @@ public class App {
 	        camel.addRoutes(new RouteBuilder() {
 	           @Override
 	           public void configure() {
-                        from("timer:test?period=100")
+                        from("timer:test?period=200")
                         .transform(simple("tick(${property.CamelTimerCounter})"))
                         .to("agent:percept?persistent=false&updateMode=replace");
 	           }});
