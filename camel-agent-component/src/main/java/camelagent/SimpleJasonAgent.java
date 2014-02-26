@@ -31,6 +31,7 @@ import jason.runtime.Settings;
 
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -131,14 +132,16 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
      * @param persistent
      * Updates the transient and persistent percepts using messages received from the camel exchange
      */
-    public void updatePerceptList(String percept, String annotations, String updateMode, String persistent)
+    public void updatePerceptList(Collection<Literal> newPercepts, String annotations, String updateMode, String persistent)
     {    	
-    	Literal l = Literal.parseLiteral(percept);
-    	
-	List<String> annots = Arrays.asList(annotations.split(","));
-    	
+    	// No longer needed as first arg no longer a string
+        // Literal l = Literal.parseLiteral(percept);
+        
     	//Add the separately recieved annotations to the literal
-    	if (l != null && annots != null)
+        List<String> annots = Arrays.asList(annotations.split(","));
+        
+        for (Literal l : newPercepts) {
+            if (l != null && annots != null)
 		 {
     		 for(String as : annots)
 			 {
@@ -149,83 +152,95 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
 					System.err.println("Exception in SimpleJasonAgent.updatePerceptList: " + e.getMessage());
 				}
 			 }			
-		 }
+		 }    
+        }    	
     	
     	if(persistent.equals("false"))
     	{
-    	    updatePercepts(updateMode, l, temp_percepts);
+    	    updatePercepts(updateMode, newPercepts, temp_percepts);
     	}
     	else if(persistent.equals("true"))
         {
-            updatePercepts(updateMode, l, pers_percepts);
+            updatePercepts(updateMode, newPercepts, pers_percepts);
         }
     }
 
-    private void updatePercepts(String updateMode, Literal l, Queue<Literal> perceptQueue) {
+    private void updatePercepts(String updateMode, Collection<Literal> newPercepts, Queue<Literal> perceptQueue) {
         //If updateMode is "add" (default option) and an identical percept is not already in the persistent queue, add the percept to the persistent queue
         if (updateMode.equals("add")) {
             synchronized (perceptQueue) {
-                boolean lit_exists = false;
-                Iterator<Literal> i = perceptQueue.iterator();
-                while (i.hasNext()) {
-                    Literal lit = i.next();
-                    if (lit.equals(l)) {
-                        lit_exists = true;
-                        break;
+                // @todo Revise to avoid double loop
+                for (Literal l : newPercepts) {
+                    boolean lit_exists = false;
+                    Iterator<Literal> i = perceptQueue.iterator();
+                    while (i.hasNext()) {
+                        Literal lit = i.next();
+                        if (lit.equals(l)) {
+                            lit_exists = true;
+                            break;
+                        }
                     }
-                }
-                if (!lit_exists) {
-                    System.out.println("*** Adding percept: " + l);
-                    perceptQueue.offer(l);
+                    if (!lit_exists) {
+                        System.out.println("*** Adding percept: " + l);
+                        perceptQueue.offer(l);
+                    }
                 }
             }
         } else if (updateMode.equals("replace")) {
             synchronized (perceptQueue) {
-                Iterator<Literal> i = perceptQueue.iterator();
-                while (i.hasNext()) {
-                    Literal lit = i.next();
-                    if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
-                        i.remove();
+                // @todo Revise to avoid double loop
+                for (Literal l : newPercepts) {
+                    Iterator<Literal> i = perceptQueue.iterator();
+                    while (i.hasNext()) {
+                        Literal lit = i.next();
+                        if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
+                            i.remove();
+                        }
                     }
+                    System.out.println("*** Adding percept: " + l);
+                    perceptQueue.offer(l);
                 }
-                System.out.println("*** Adding percept: " + l);
-                perceptQueue.offer(l);
             }
         } else {
             Matcher m = Pattern.compile("delete(\\([=_](,[=_])*\\))?").matcher(updateMode);
             if (m.matches()) {
-                String[] argMatchMode;
-                if (m.start(1) == -1) {
-                    // No arguments provided for 'delete'. Assume all args of queued percept must match new percept for queued percept to be deleted
-                    argMatchMode = new String[l.getArity()];
-                    Arrays.fill(argMatchMode, "=");
-                } else {
-                    String deleteArgsWithoutParens = updateMode.substring(m.start(1) + 1, m.end(1) - 1);
-                    argMatchMode = deleteArgsWithoutParens.split(",");
+                // delete mode
+                if (newPercepts.size() > 1) {                  
+                   logger.log(Level.SEVERE, "Percept delete mode not compatible with non-singleton collection of percepts");
+                   return;
                 }
-                System.out.println("*** delete args: " + Arrays.toString(argMatchMode));
-                System.out.println("*** percept to delete: " + l);
-                synchronized (perceptQueue) {
-                    Iterator<Literal> it = perceptQueue.iterator();
-                    while (it.hasNext()) {
-                        Literal lit = it.next();
-                        System.out.println("*** Queued percept being checked: " + lit);
-                        if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
-                            boolean delete = true;
-                            for (int i = 0; i < lit.getArity(); i++) {
-                                if (argMatchMode[i].equals("=") && !l.getTerm(i).equals(lit.getTerm(i))) {
-                                      delete = false;
+                for (Literal l : newPercepts) {  // Should have 0 or 1 iterations (not sure if 0 can occur)
+                    String[] argMatchMode;
+                    if (m.start(1) == -1) {
+                        // No arguments provided for 'delete'. Assume all args of queued percept must match new percept for queued percept to be deleted
+                        argMatchMode = new String[l.getArity()];
+                        Arrays.fill(argMatchMode, "=");
+                    } else {
+                        String deleteArgsWithoutParens = updateMode.substring(m.start(1) + 1, m.end(1) - 1);
+                        argMatchMode = deleteArgsWithoutParens.split(",");
+                    }
+                    synchronized (perceptQueue) {
+                        Iterator<Literal> it = perceptQueue.iterator();
+                        while (it.hasNext()) {
+                            Literal lit = it.next();
+                            System.out.println("*** Queued percept being checked: " + lit);
+                            if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
+                                boolean delete = true;
+                                for (int i = 0; i < lit.getArity(); i++) {
+                                    if (argMatchMode[i].equals("=") && !l.getTerm(i).equals(lit.getTerm(i))) {
+                                          delete = false;
+                                    }
                                 }
-                            }
-                            if (delete) {
-                                System.out.println("*** Deleting percept: " + lit);
-                                it.remove();
+                                if (delete) {
+                                    System.out.println("*** Deleting percept: " + lit);
+                                    it.remove();
+                                }
                             }
                         }
                     }
                 }
             } else {
-                System.out.println("Bad value for updateMode " + updateMode + "(percept: " + l + ")");
+                System.out.println("Bad value for updateMode " + updateMode + "(percepts: " + newPercepts + ")");
             }
         }
     }
@@ -259,7 +274,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
         List<AgentConsumer> actionCons = getValidConsumers("action");
        
         //if there is no consumer to handle this action
-        if (actionCons.size()==0)
+        if (actionCons.isEmpty())
         {
         	action.setResult(false);
         	feedback.add(action);

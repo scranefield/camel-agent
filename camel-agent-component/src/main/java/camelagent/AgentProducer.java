@@ -26,7 +26,10 @@ import jason.asSyntax.Literal;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.regex.Matcher;
 
 import org.apache.camel.Exchange;
@@ -56,11 +59,10 @@ public class AgentProducer extends DefaultProducer {
     	
     	//extract header
 		Map<String, Object> headerInfo = exchange.getIn().getHeaders();
-		//extract body
-		String content = exchange.getIn().getBody(String.class);
 		
 		// A BDI producer receives either "message" or "percept"
     	if (endpoint.getUriOption().contains("message")){
+		String content = exchange.getIn().getBody(String.class);
     		String r = "";
     		String s = "";
     		String i = "";
@@ -92,6 +94,22 @@ public class AgentProducer extends DefaultProducer {
     	}    		
     	if (endpoint.getUriOption().contains("percept"))
     	{  
+                Object body = exchange.getIn().getBody();
+                Collection<Literal> content;
+                if (body instanceof Collection) {
+                     Collection origContent = (Collection) body;
+                     content = new ArrayList<Literal>();
+                     for (Object item : origContent) {
+                         Literal lit = exchange.getContext().getTypeConverter().convertTo(Literal.class, item);
+                         content.add(lit);
+                     }
+                }   
+                else {
+                    // Single percept in body
+                    // Get existing literal or use type converter class LiteralConverter
+                    Literal lit  = exchange.getIn().getBody(Literal.class);
+                    content = Collections.singleton(lit);
+                }
                 String r = "";
     		String persistent = endpoint.getPersistent();
     		String updateMode = endpoint.getUpdateMode();

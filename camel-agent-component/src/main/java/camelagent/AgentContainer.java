@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
+import jason.asSyntax.Literal;
 
 import camelagent.util.ContainerNamingStrategy;
 
@@ -128,7 +130,7 @@ public class AgentContainer {
 	 * @param persistent
 	 * receive the percepts from the camel exchange, and pass it to a particular agent or all the agents, based on the value of the receiver parameter
 	 */
-	public void getCamelpercepts(String content, String receiver, String annotations, String updateMode, String persistent)
+	public void getCamelpercepts(Collection<Literal> content, String receiver, String annotations, String updateMode, String persistent)
 	{
 		try
 		{	

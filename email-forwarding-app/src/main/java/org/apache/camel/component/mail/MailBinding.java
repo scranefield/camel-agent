@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * This file has been modifed from the original that is part of the Apache
+ * This file has been modified from the original that is part of the Apache
  * Camel distribution by Stephen Cranefield, July 2013. Search for "Stephen
  * Cranefield" to find changes.
  */
@@ -122,7 +122,7 @@ public class MailBinding {
             mimeMessage.setFrom(asEncodedInternetAddress(from, determineCharSet(endpoint.getConfiguration(), exchange)));
         }
 // The following lines were added by Stephen Cranefield
-        LOG.trace("Inside hacked MailBindingOK");
+        LOG.trace("Inside hacked MailBinding");
         if (exchange.getIn().getBody() instanceof Multipart) {
             mimeMessage.setContent(exchange.getIn().getBody(Multipart.class));
         }

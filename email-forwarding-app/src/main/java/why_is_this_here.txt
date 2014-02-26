@@ -1,0 +1,1 @@
+msgshow.java is not used by this project. It is here as an example to copy (eventually) of how to process email messages of various structures.

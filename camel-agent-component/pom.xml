@@ -6,14 +6,15 @@
   <groupId>nz.ac.otago.infosci.camelagent.component</groupId>
   <artifactId>camelagent</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.1</version>
 
   <name>Camel Agent Component</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <camel-version>2.10.5</camel-version>
+    <!-- <camel-version>2.10.5</camel-version> -->
+    <camel-version>2.12.3</camel-version>
     
   </properties>
   <dependencies>

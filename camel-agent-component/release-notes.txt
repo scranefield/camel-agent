@@ -1,0 +1,8 @@
+Camel agent component version 1.1 release notes
+
+* Camel dependency updated to version 2.12.3 
+* Support added for messages arriving at a percept producer endpoint to have a
+  collection of percepts in the body.
+* Percepts can now be represented within Camel messages as either strings (as
+  before) or as jason.asSyntax.Literal objects
+* Added class camelagent.util.SingletonContainerNamingStrategy

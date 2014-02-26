@@ -8,3 +8,6 @@
   -+last_tick(Count);
   .println("!!! Missed ticks from ", OldCount+1, " to ", Count-1);
   .println("!!! Got tick ", Count).
+
++foo <- .println("!!! Got foo").
++bar <- .println("!!! Got bar").
