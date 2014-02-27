@@ -6,7 +6,7 @@
   <groupId>nz.ac.otago.infosci.camelagent.component</groupId>
   <artifactId>camelagent</artifactId>
   <packaging>jar</packaging>
-  <version>1.1</version>
+  <version>1.1.1</version>
 
   <name>Camel Agent Component</name>
 

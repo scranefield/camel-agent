@@ -181,7 +181,6 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
                         }
                     }
                     if (!lit_exists) {
-                        System.out.println("*** Adding percept: " + l);
                         perceptQueue.offer(l);
                     }
                 }
@@ -197,7 +196,6 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
                             i.remove();
                         }
                     }
-                    System.out.println("*** Adding percept: " + l);
                     perceptQueue.offer(l);
                 }
             }

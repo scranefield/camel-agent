@@ -148,7 +148,8 @@ public class AgentConsumer extends DefaultConsumer {
     			List<Term> ann =  action.getActionTerm().getAnnots();    	
     			String annots = "";
     			if (ann != null)
-    				annots = ann.toString();//StringUtils.join(ann, ',');    					
+    				annots = ann.toString();//StringUtils.join(ann, ',');    		
+                        exchange.getIn().setBody(action.getActionTerm().toString(), String.class);
     			sendActionToCamel(agName, action.getActionTerm().getFunctor(), paramsAsStrings, exchange, annots);
     			
     		} catch (Exception e) {
