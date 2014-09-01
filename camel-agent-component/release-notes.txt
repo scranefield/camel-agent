@@ -5,7 +5,7 @@ Camel agent component version 1.1.2 release notes
   Example:
     type1 n=10 src=agent.asl
     type2 n=10 src=agent.asl
-  Each line above results in two types of agents being created, both (in the case) using the same .asl file, with 10 agents of each type being created. The agents have names of the form <source file name without .asl>_<type>_<number starting at 1>. Agent names and types can be obtained from the agent container using these methods: Set<String> getAgentNames()
+  Each line above results in two types of agents being created, both (in the case) using the same .asl file, with 10 agents of each type being created. The agents have names of the form <source file name without .asl>_<type>_<number starting at 1>. Agent names and types can be obtained from the agent container using these methods:
     Set<String> getAgentNames()
     Map<String,String> getAgentTypes()
 * AgentContainer's constructors must now be passed classpath and package objects. These are used to inform the container of the classpath and package to be used to find the (optional) agents.ini file and the agent source code files.
