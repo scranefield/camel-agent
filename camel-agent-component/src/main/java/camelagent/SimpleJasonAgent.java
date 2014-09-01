@@ -33,11 +33,16 @@ import jason.runtime.Settings;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Vector;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,7 +55,7 @@ import java.util.regex.Matcher;
  * This class extends the logic in the SimpleJasonAgent class of the Jason distribution
  */
 public class SimpleJasonAgent extends AgArch implements Serializable{
-	static final long serialVersionUID =2;
+    static final long serialVersionUID =2;
     private static Logger logger = Logger.getLogger(SimpleJasonAgent.class.getName());
     private AgentContainer container;
     Agent ag;
@@ -61,26 +66,25 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     private boolean hasStarted;
     private Vector<AgentConsumer> myConsumers;  
 
-    public SimpleJasonAgent(AgentContainer container, String path, String fName) {
-    	this.container = container;
+    public SimpleJasonAgent(AgentContainer container, String filePathOrURL, String name) {
+        this.container = container;
+        this.name = name;
+        hasStarted = false;
     	localMsgQueue = new ConcurrentLinkedQueue<Message>();
     	pers_percepts = new ConcurrentLinkedQueue<Literal>();
     	temp_percepts = new ConcurrentLinkedQueue<Literal>();
     	myConsumers = new Vector<AgentConsumer>();
-    	
-        // set up the Jason agent
+        
         try {
             ag = new Agent();
-            name = fName;   
-            hasStarted = false;
             new TransitionSystem(ag, new Circumstance(), new Settings(), this);  
             //Initialise agent from the .asl file
-            ag.initAg(path);
+            ag.initAg(filePathOrURL);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Init error", e);
         }
     }
-    
+
     public void addToMyConsumers(AgentConsumer myConsumer)
     {
     	synchronized (myConsumers) {    		
@@ -96,7 +100,6 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     	 Thread thread = new Thread(){
     		    public void run(){
     		    	try {
-    		    		
     		            while (isRunning()) {
     		                // calls the Jason engine to perform one reasoning cycle
     		                logger.fine("Reasoning....");
@@ -129,16 +132,13 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
      * @param percept
      * @param annotations
      * @param updateMode
+     * @param nafFunctors
      * @param persistent
      * Updates the transient and persistent percepts using messages received from the camel exchange
      */
-    public void updatePerceptList(Collection<Literal> newPercepts, String annotations, String updateMode, String persistent)
+    public void updatePerceptList(Collection<Literal> newPercepts, String annotations, String updateMode, Set<String> nafFunctors, String persistent)
     {    	
-    	// No longer needed as first arg no longer a string
-        // Literal l = Literal.parseLiteral(percept);
-        
-    	//Add the separately recieved annotations to the literal
-        List<String> annots = Arrays.asList(annotations.split(","));
+    	List<String> annots = Arrays.asList(annotations.split(","));
         
         for (Literal l : newPercepts) {
             if (l != null && annots != null)
@@ -157,47 +157,53 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     	
     	if(persistent.equals("false"))
     	{
-    	    updatePercepts(updateMode, newPercepts, temp_percepts);
+    	    updatePercepts(updateMode, nafFunctors, newPercepts, temp_percepts);
     	}
     	else if(persistent.equals("true"))
         {
-            updatePercepts(updateMode, newPercepts, pers_percepts);
+            updatePercepts(updateMode, nafFunctors, newPercepts, pers_percepts);
         }
     }
 
-    private void updatePercepts(String updateMode, Collection<Literal> newPercepts, Queue<Literal> perceptQueue) {
+    private void updatePercepts(String updateMode, Set<String> nafFunctors, Collection<Literal> newPercepts, Queue<Literal> perceptQueue) {
         //If updateMode is "add" (default option) and an identical percept is not already in the persistent queue, add the percept to the persistent queue
         if (updateMode.equals("add")) {
+            List<Literal> perceptsToAdd = new LinkedList<Literal>(newPercepts);
             synchronized (perceptQueue) {
-                // @todo Revise to avoid double loop
-                for (Literal l : newPercepts) {
-                    boolean lit_exists = false;
-                    Iterator<Literal> i = perceptQueue.iterator();
-                    while (i.hasNext()) {
-                        Literal lit = i.next();
-                        if (lit.equals(l)) {
-                            lit_exists = true;
-                            break;
-                        }
-                    }
-                    if (!lit_exists) {
-                        perceptQueue.offer(l);
+                Iterator<Literal> it = perceptsToAdd.iterator();
+                while (it.hasNext()) {
+                    Literal l = it.next();
+                    if (perceptQueue.contains(l)) {
+                        it.remove();
                     }
                 }
+                perceptQueue.addAll(perceptsToAdd);
             }
         } else if (updateMode.equals("replace")) {
+            Set<String> newPerceptFunctors = new HashSet<String>();
+            for (Literal l : newPercepts) {
+                newPerceptFunctors.add(l.getFunctor());
+            }
             synchronized (perceptQueue) {
-                // @todo Revise to avoid double loop
-                for (Literal l : newPercepts) {
-                    Iterator<Literal> i = perceptQueue.iterator();
-                    while (i.hasNext()) {
-                        Literal lit = i.next();
-                        if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
-                            i.remove();
+                Iterator<Literal> it = perceptQueue.iterator();
+                while (it.hasNext()) {
+                    Literal lit = it.next();
+                    String f = lit.getFunctor();
+                    if (nafFunctors.contains(f) && !newPerceptFunctors.contains(f)) { // Negation as failure applies
+                        // @todo Allow naf endpoint parameter to specify arity as well as functor
+                        perceptQueue.remove(lit); // Don't change to it.remove()!!! Can get IllegalStateException if lit already removed, but "weakly consistent" iterator doesn't know.
+                    }
+                    else {
+                        // Negation as failure does not apply
+                        for (Literal newPercept : newPercepts) {
+                            if (f.equals(newPercept.getFunctor()) &&
+                                lit.getArity() == newPercept.getArity()) {
+                                    perceptQueue.remove(lit); // Don't change to it.remove()!!!           
+                            }
                         }
                     }
-                    perceptQueue.offer(l);
                 }
+                perceptQueue.addAll(newPercepts);
             }
         } else {
             Matcher m = Pattern.compile("delete(\\([=_](,[=_])*\\))?").matcher(updateMode);
@@ -221,7 +227,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
                         Iterator<Literal> it = perceptQueue.iterator();
                         while (it.hasNext()) {
                             Literal lit = it.next();
-                            System.out.println("*** Queued percept being checked: " + lit);
+                            //System.out.println("*** Queued percept being checked: " + lit);
                             if (lit.getFunctor().equals(l.getFunctor()) && lit.getArity() == l.getArity()) {
                                 boolean delete = true;
                                 for (int i = 0; i < lit.getArity(); i++) {
@@ -230,7 +236,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
                                     }
                                 }
                                 if (delete) {
-                                    System.out.println("*** Deleting percept: " + lit);
+                                    //System.out.println("*** Deleting percept: " + lit);
                                     it.remove();
                                 }
                             }
@@ -314,7 +320,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     @Override
     public void sleep() {
         try {
-        Thread.sleep(1000);
+        Thread.sleep(100);
         } catch (InterruptedException e) {}
     }    
     

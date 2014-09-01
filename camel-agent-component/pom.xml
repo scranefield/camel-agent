@@ -6,14 +6,13 @@
   <groupId>nz.ac.otago.infosci.camelagent.component</groupId>
   <artifactId>camelagent</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
 
   <name>Camel Agent Component</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <!-- <camel-version>2.10.5</camel-version> -->
     <camel-version>2.12.3</camel-version>
     
   </properties>
@@ -51,7 +50,12 @@
 	<groupId>junit</groupId>
 	<artifactId>junit-dep</artifactId>
 	<version>4.5</version>
-    </dependency>            
+    </dependency>
+<dependency>
+    <groupId>net.sf.corn</groupId>
+    <artifactId>corn-cps</artifactId>
+    <version>1.1.7</version>
+</dependency>     
 <dependency>
 	<groupId>commons-lang</groupId>
 	<artifactId>commons-lang</artifactId>

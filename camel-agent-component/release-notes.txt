@@ -1,8 +1,14 @@
-Camel agent component version 1.1 release notes
+Camel agent component version 1.1.2 release notes
 
-* Camel dependency updated to version 2.12.3 
-* Support added for messages arriving at a percept producer endpoint to have a
-  collection of percepts in the body.
-* Percepts can now be represented within Camel messages as either strings (as
-  before) or as jason.asSyntax.Literal objects
-* Added class camelagent.util.SingletonContainerNamingStrategy
+* Agent source files (.asl files) are now found using the classpath. Therefore they can no longer appear in the Java src folder unless that is added to the class path. In the Email forwarding application, the agent source files are now in the resources folder.
+* The agent source files to be used, along with a number of agents of each type to create, can now be optionally specified in an agents.ini file, loaded from the classpath.
+  Example:
+    type1 n=10 src=agent.asl
+    type2 n=10 src=agent.asl
+  Each line above results in two types of agents being created, both (in the case) using the same .asl file, with 10 agents of each type being created. The agents have names of the form <source file name without .asl>_<type>_<number starting at 1>. Agent names and types can be obtained from the agent container using these methods: Set<String> getAgentNames()
+    Set<String> getAgentNames()
+    Map<String,String> getAgentTypes()
+* AgentContainer's constructors must now be passed classpath and package objects. These are used to inform the container of the classpath and package to be used to find the (optional) agents.ini file and the agent source code files.
+* The sleep() method in SimpleJasonAgent has been changed to sleep for 100 ms rather than 1000ms. (A better solution is needed, maybe based on Jason's jason.infra.centralised.CentralisedAgArch.)
+* Fixed bug in SimpleJasonAgent when handling the "replace" percept update mode (some percepts were being deleted immediately after being added, as the "weakly consistent" iterator for Java's ConcurrentLinkedQueue was incorporating newly percepts that were added while using the iterator).
+* Added a new endpoint parameter and corresponding message header, "naf" (negation as failure), for percept producer endpoints. This applies when the percept update mode is "replace". Its value is a comma separated list of percept functors. For any of these functors, during percept update, if there is no new percept with that functor, any queued percepts with that functor are deleted. The intention is that the absence of any such percept is significant, and signals the negation of any current percepts of that type. (This probably only makes sense for persistent percepts, but the option is currently available for transient percepts too.)

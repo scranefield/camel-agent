@@ -4,7 +4,7 @@
   <groupId>nz.ac.otago.infosci.camelagent.emailforwarding</groupId>
   <artifactId>email-forwarding-app</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.1.2</version>
   <name>Camel Agent Email Forwarding Application</name>
   <url></url>
   <properties>
@@ -17,7 +17,7 @@
     <dependency>
       <groupId>nz.ac.otago.infosci.camelagent.component</groupId>
       <artifactId>camelagent</artifactId>
-      <version>1.1</version>
+      <version>1.1.2</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>

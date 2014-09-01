@@ -19,7 +19,7 @@ public class App {
 
 	 public static void main(String[] args) throws Exception {
 
-                container = new AgentContainer();
+                container = new AgentContainer(App.class.getClassLoader(), App.class.getPackage());
 	        final CamelContext camel = new DefaultCamelContext();
 	        camel.addComponent("agent", new AgentComponent(container));
 

@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Matcher;
@@ -113,6 +114,7 @@ public class AgentProducer extends DefaultProducer {
                 String r = "";
     		String persistent = endpoint.getPersistent();
     		String updateMode = endpoint.getUpdateMode();
+                Set<String> nafFunctors = endpoint.getNafFunctors();
     		String annots = endpoint.getAnnotations();
     		if(headerInfo.containsKey("receiver"))
     			r = (String)headerInfo.get("receiver");    		
@@ -122,22 +124,25 @@ public class AgentProducer extends DefaultProducer {
     			persistent = (String)headerInfo.get("persistent");
     		if(headerInfo.containsKey("updateMode"))
     			updateMode = (String)headerInfo.get("updateMode");
-                System.out.println("Percept update mode: " + updateMode);
-    		if (er==null || r.equals(er))
-                        this.bdi_component.getContainer().getCamelpercepts(content, r, annots, updateMode, persistent);
+                if(headerInfo.containsKey("naf")) {
+                    nafFunctors = endpoint.getNafFunctors((String)headerInfo.get("naf"));                        
+                }
+    		if (er==null || r.equals(er)) {
+                        this.bdi_component.getContainer().getCamelpercepts(content, r, annots, updateMode, nafFunctors, persistent);
+                }
     	}    
     }
     
     /**
      * @param matcher
      * @param content
-     * @param reciever
+     * @param receiver
      * @param illoc
      * @param sender
      * @param annotations
      * Sends the message to the agent if the message content matches with the uri information
      */
-    private void sendMatchedMessagetoJason(Matcher matcher, String content, String reciever, String illoc, String sender, String annotations) 
+    private void sendMatchedMessagetoJason(Matcher matcher, String content, String receiver, String illoc, String sender, String annotations) 
     {
         String matchedS = endpoint.getReplacedContent(matcher, content);
     	matchedS = matchedS.replace("\n", "").replace("\r", "");
@@ -146,7 +151,7 @@ public class AgentProducer extends DefaultProducer {
     	
     	Message m;
 		try {
-			m = new Message(illoc, sender, reciever, ASSyntax.parseTerm(matchedS));
+			m = new Message(illoc, sender, receiver, ASSyntax.parseTerm(matchedS));
 			
 			List<String> annots = Arrays.asList(annotations.split(","));	    	
 			Literal lit = (Literal) m.getPropCont();
@@ -162,9 +167,9 @@ public class AgentProducer extends DefaultProducer {
 			 }	
 			 
 			if(matcher == null)
-				this.bdi_component.getContainer().getCamelMessages(m, reciever);
+				this.bdi_component.getContainer().getCamelMessages(m, receiver);
 			else if(matcher.find())
-				this.bdi_component.getContainer().getCamelMessages(m, reciever);
+				this.bdi_component.getContainer().getCamelMessages(m, receiver);
 		}
 		 catch (Exception e) {	
 			 System.out.println(e.toString());

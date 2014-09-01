@@ -44,7 +44,9 @@ public class App {
 
 	 public static void main(String[] args) throws Exception {
 
-                container = new AgentContainer(new ZookeeperContainerNamingStrategy("/containers/container", CreateMode.EPHEMERAL_SEQUENTIAL));
+                container = new AgentContainer(new ZookeeperContainerNamingStrategy("/containers/container", CreateMode.EPHEMERAL_SEQUENTIAL),
+                                               App.class.getClassLoader(),
+                                               App.class.getPackage());
 	        final CamelContext camel = new DefaultCamelContext();
 	        camel.addComponent("agent", new AgentComponent(container));
 

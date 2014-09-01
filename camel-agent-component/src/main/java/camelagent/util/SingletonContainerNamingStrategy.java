@@ -24,10 +24,9 @@ package camelagent.util;
  * Returns a fixed predefined AgentContainer name
  */
 public class SingletonContainerNamingStrategy implements ContainerNamingStrategy {
-        private final static String containerId = "local";
     
 	public String getName()
 	{		
-		return containerId;
+		return ""; // No need for a container name
 	}	
 }

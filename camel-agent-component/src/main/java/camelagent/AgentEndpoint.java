@@ -19,7 +19,12 @@
 
 package camelagent;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +49,8 @@ public class AgentEndpoint extends DefaultEndpoint {
 	private String match;
 	private String replace;
 	private String updateMode;
+        private String naf;
+        private Set<String> nafFunctors;
 	private String persistent;
 	private String resultHeaderMap;
 	private AgentComponent agent_component;
@@ -58,7 +65,9 @@ public class AgentEndpoint extends DefaultEndpoint {
         //defaults
         persistent = "false";
         updateMode = "add";
+        naf = "";
         annotations = "";
+        nafFunctors = new HashSet<String>();
     }  
     
     public void setResultHeaderMap(String resultHeaderMap)
@@ -79,6 +88,32 @@ public class AgentEndpoint extends DefaultEndpoint {
     public String getUpdateMode()
     {
     	return updateMode;
+    }
+    
+    public void setNaf(String naf)
+    {
+    	this.naf = naf;
+    }
+    
+    public String getNaf()
+    {
+    	return naf;
+    }
+    
+    public Set<String> getNafFunctors() {
+        return getNafFunctors(getNaf());
+    }
+    
+    public Set<String> getNafFunctors(String naf) {
+        if (naf == null) {
+            return Collections.EMPTY_SET;
+        } else {
+            String[] nafFunctorArray = naf.trim().split(",");
+            for (int i=0; i < nafFunctorArray.length; i++) {
+                nafFunctors.add(nafFunctorArray[i].trim());
+            }
+            return nafFunctors;
+        }
     }
     
     public void setPersistent(String persistent)

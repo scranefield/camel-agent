@@ -23,83 +23,171 @@ import jason.asSemantics.Message;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.List;
-import java.util.Vector;
+import java.util.Vector; //TODO: Is there a reason to use this obsolete class?
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 import jason.asSyntax.Literal;
+import java.lang.Package;
+import java.io.InputStreamReader;
+import net.sf.corn.cps.*;
 
 import camelagent.util.ContainerNamingStrategy;
+import camelagent.util.SingletonContainerNamingStrategy;
+import java.net.URL;
+import java.net.URISyntaxException;
+import java.util.Collections;
 
 /**
  * @author surangika
  * Manages Jason agents in a Camel context
  */
 public class AgentContainer {
-	private static Vector<SimpleJasonAgent> agentList= new Vector<SimpleJasonAgent> ();
-	private Vector<String> agentNameList;
-	SimpleJasonAgent ag;	
+	protected static Vector<SimpleJasonAgent> agentList= new Vector<SimpleJasonAgent> ();
+	private Set<String> agentNames = new HashSet<String>();
+        private Map<String,String> agentTypes = new HashMap<String,String>();
 	
-	public AgentContainer()
+	public AgentContainer(ClassLoader cldr, Package pkg)
 	{
-		this(null);
+		this(new SingletonContainerNamingStrategy(), cldr, pkg);
 	}
-	public AgentContainer(ContainerNamingStrategy strat)
-	{				
-		String containerId = "";
-		if (strat != null)
-			containerId= strat.getName();
-		
-		//agentList = new Vector<SimpleJasonAgent> ();
-		agentNameList = new Vector<String>();		
-		
-		List<File> subDirs = getSubdirs(new File("."));
-		for (File subDir : subDirs)
+        
+	public AgentContainer(ContainerNamingStrategy strategy, ClassLoader cldr, Package pkg)
+	{	
+                String containerId = strategy.getName();
+                Map<String,List<Map>> agentTypeSpecs = new HashMap<String,List<Map>>();
+                boolean iniFileExists = true;
+                try {
+                        URL iniFileURL = cldr.getResource(pkg.getName().replace('.','/') + "/agents.ini");
+                        if (iniFileURL == null) throw new IOException("");
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(iniFileURL.openStream()));
+                
+                        try {
+                                for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                                    String[] lineParts = line.trim().split("\\s++", 2);
+                                    String agentType = lineParts[0];
+                                    Map typeSpec = (lineParts.length > 1 ? stringToMap(lineParts[1]): new HashMap());
+                                    if (!typeSpec.containsKey("n")) typeSpec.put("n","1");
+                                    String nstring = (String)typeSpec.get("n");
+                                    try {
+                                        int i = Integer.parseInt(nstring);
+                                        typeSpec.put("n", i);
+                                    } catch (NumberFormatException e) {
+                                        // TODO: Use a logger
+                                        System.out.println("Invalid number of agents ('" + nstring + "') in agents.ini. Substituting '1'.");
+                                        typeSpec.put("n", 1);
+                                    }
+                                    if (typeSpec.containsKey("src")) {
+                                        typeSpec.put("type", agentType);
+                                        String src = (String)typeSpec.get("src");
+                                        if (src.endsWith(".asl")) {
+                                            typeSpec.put("src", src);
+                                            typeSpec.put("name_stem", src.substring(0,src.lastIndexOf(".asl"))
+                                                                  + "_" + agentType                       );
+                                        } else {
+                                            typeSpec.put("src", src + ".asl");
+                                            typeSpec.put("name_stem", src + "_" + agentType);
+                                        }
+                                    } else {
+                                        if (agentType.endsWith(".asl")) {
+                                            typeSpec.put("type", agentType.substring(0,agentType.lastIndexOf(".asl")));
+                                            typeSpec.put("src", agentType);
+                                            typeSpec.put("name_stem", typeSpec.get("type"));
+                                        } else {
+                                            typeSpec.put("type", agentType);
+                                            typeSpec.put("src", agentType + ".asl");
+                                            typeSpec.put("name_stem", agentType);
+                                        }
+                                    }
+                                    String src = (String)typeSpec.get("src");
+                                    if (agentTypeSpecs.containsKey(src)) {
+                                        List specsForSrc = agentTypeSpecs.get(src);
+                                        specsForSrc.add(typeSpec);
+                                    } else {
+                                        List specsForSrc = new ArrayList();
+                                        specsForSrc.add(typeSpec);
+                                        agentTypeSpecs.put(src, specsForSrc);
+                                    }
+                                }
+                        } finally {
+                                if (reader != null) reader.close();
+                        }
+                } catch(IOException e) {
+                    // TODO: Should use a logger!
+                    System.out.println("Warning: Optional file agents.ini not found in package " + pkg.getName() + " in specified classpath");
+                    iniFileExists = false;
+                }                
+               
+                List<URL> aslFileURLs = CPScanner.scanResources(new ResourceFilter().packageName(pkg.getName()).resourceName("*.asl"));
+                for (URL aslFileURL : aslFileURLs)
 		{
-			File[] files = subDir.listFiles();
-			for (File file : files) {
-				if (file.isFile() && file.getName().endsWith(".asl")) {
-					String fName = file.getName();
-					fName = fName.substring(0, fName.indexOf(".asl"));
-					String name = "";
-					//If there is a containerId generated by a naming strategy (Currently Zookeeper container name is used as the name )
-					if (containerId != "")
-						name = containerId+"__"+fName;
-					else
-						name = fName;
-					ag = new SimpleJasonAgent(this, file.getAbsolutePath(), name);
-					if (!agentNameList.contains(fName)){
-						agentList.add(ag);
-						agentNameList.add(fName);
-					}
-				}
-			}
-		}
-	}
-	
-	/**
-	 * @param file
-	 * @return
-	 * Finds all subdirectories of the current folder
-	 */
-	private List<File> getSubdirs(File file) {
-	    List<File> subdirs = Arrays.asList(file.listFiles(new FileFilter() {
-	        public boolean accept(File f) {
-	            return f.isDirectory();
-	        }
-	    }));
-	    subdirs = new ArrayList<File>(subdirs);
+                    String aslFilePath = aslFileURL.getPath();
+                    String fName = aslFilePath.substring(aslFilePath.lastIndexOf("/")+1);
+                    List<Map> typeSpecs;
+                    if (agentTypeSpecs.containsKey(fName)) {
+                        typeSpecs = agentTypeSpecs.get(fName);
+                    } else {
+                        if (!iniFileExists) {
+                            Map typeSpec = new HashMap();
+                            typeSpec.put("src", fName);
+                            typeSpec.put("type", fName.substring(0, fName.indexOf(".asl")));
+                            typeSpec.put("n", 1);
+                            typeSpecs = Collections.singletonList(typeSpec);
+                        } else {
+                            typeSpecs = Collections.EMPTY_LIST;
+                        }
+                    }
+                    for (Map typeSpec : typeSpecs) {
+                        Integer n = (Integer) typeSpec.get("n");
+                        SimpleJasonAgent ag = null;
+                        for (int i = 1; i <= n; i++) {
+                                String src = (String) typeSpec.get("src");
+                                String nameStem = (String) typeSpec.get("name_stem");
+                                //String name = src.substring(0, src.indexOf(".asl")) + "_" + i;
+                                String name = nameStem + "_" + i;
+                                try {
+                                    ag = new SimpleJasonAgent(this, aslFileURL.toURI().toString(), 
+                                                              qualifiedName(containerId, name));
+                                } catch (URISyntaxException e) {} // Should never happen for a classpath resource URI ???
+                                if (ag != null && !agentNames.contains(name)) {
+                                        agentList.add(ag);
+                                        agentNames.add(name);
+                                        agentTypes.put(name, (String) typeSpec.get("type"));
+                                } else {
+                                    // TODO: Use a logger
+                                    System.out.println("Warning: Agent name '" + name + "' has already been used");
+                                }
 
-	    List<File> deepSubdirs = new ArrayList<File>();
-	    for(File subdir : subdirs) {
-	        deepSubdirs.addAll(getSubdirs(subdir)); 
-	    }
-	    subdirs.addAll(deepSubdirs);
-	    return subdirs;
-	}
+                        }
+                    }
+                }
+        }
+
+        // Adapted from http://stackoverflow.com/questions/14768171/convert-string-representing-key-value-pairs-to-map
+        private Map<String, String> stringToMap(String str) {
+                String[] tokens = str.split(" |=");
+                Map<String, String> map = new HashMap<String,String>();
+                for (int i=0; i<tokens.length-1; ) map.put(tokens[i++], tokens[i++]);
+                return map;
+        }
+
+        public Set<String> getAgentNames() {
+            return agentNames;
+        }
+        
+        public Map<String,String> getAgentTypes() {
+            return agentTypes;
+        }
 	
 	public void createAgent()
 	{
@@ -127,31 +215,29 @@ public class AgentContainer {
 	 * @param receiver
 	 * @param annotations
 	 * @param updateMode
+         * @param nafFunctors
 	 * @param persistent
 	 * receive the percepts from the camel exchange, and pass it to a particular agent or all the agents, based on the value of the receiver parameter
 	 */
-	public void getCamelpercepts(Collection<Literal> content, String receiver, String annotations, String updateMode, String persistent)
+	public void getCamelpercepts(Collection<Literal> content, String receiver, String annotations, String updateMode, Set<String> nafFunctors, String persistent)
 	{
-		try
-		{	
-			Iterator<SimpleJasonAgent> it = agentList.iterator();
-            for (; it.hasNext();)
-            { 
-            	SimpleJasonAgent a = it.next();
-            	if (!receiver.equals("")) {
-					if (a.getAgName().equals(receiver))
-						a.updatePerceptList(content, annotations, updateMode, persistent);
-				}
-            	else {
-                    System.out.println("Updating percepts for agent " + a.getAgName() + "; content = " + content);
-                    a.updatePerceptList(content, annotations, updateMode, persistent);
+            try {	
+                Iterator<SimpleJasonAgent> it = agentList.iterator();
+                for (; it.hasNext();) { 
+                    SimpleJasonAgent a = it.next();
+                    if (!receiver.equals("")) {
+                        if (a.getAgName().equals(receiver)) {
+                            a.updatePerceptList(content, annotations, updateMode, nafFunctors, persistent);
+                        }
+                    } else {
+                        System.out.println("Updating percepts for agent " + a.getAgName() + "; content = " + content);
+                        a.updatePerceptList(content, annotations, updateMode, nafFunctors, persistent);
+                    }
                 }
+            } catch(Exception e) {
+                System.out.println("Exception in AgentContainer.getCamelPercepts: " + e.getMessage());
+                e.printStackTrace();
             }
-		}
-		catch(Exception e)
-		{
-                    System.out.println("Exception in AgentContainer.getCamelPercepts: " + e.getMessage());
-		}
 	}
 		
 	/**
@@ -186,4 +272,12 @@ public class AgentContainer {
 		{			
 		}		
 	}	
+
+    private String qualifiedName(String containerId, String name) {
+        //Prepend containerId if it has a non-empty name, indicating there may be multiple containers
+        if (containerId != "")
+                return containerId+"__"+name;
+        else
+                return name;
+    }
 }
