@@ -1,5 +1,3 @@
-users([a,b,c,d,e,f,crast78p]).
-
 /* index(+Item, +List, -Index).
    Fails if List is empty
 */
@@ -77,4 +75,3 @@ sublist([H|T], Start, NumToTake, SubList) :-
      if (RelevantUsers \== []) {
        .send(router, tell, relevant(ID, RelevantUsers))
      }.
-
