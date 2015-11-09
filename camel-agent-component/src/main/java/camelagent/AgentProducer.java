@@ -115,6 +115,8 @@ public class AgentProducer extends DefaultProducer {
             String updateMode = endpoint.getUpdateMode();
             Set<String> nafFunctors = endpoint.getNafFunctors();
             String annots = endpoint.getAnnotations();
+            // TO DO: add support for receiver being a comma-separated list (as promised in EMAS'13 paper)
+                        
             if (headerInfo.containsKey("receiver"))
                     r = (String) headerInfo.get("receiver");    		
             if (headerInfo.containsKey("annotations"))
