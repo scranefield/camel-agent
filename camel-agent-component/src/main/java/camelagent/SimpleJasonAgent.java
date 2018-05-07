@@ -27,6 +27,7 @@ import jason.asSemantics.Message;
 import jason.asSemantics.TransitionSystem;
 import jason.asSyntax.ASSyntax;
 import jason.asSyntax.Literal;
+import jason.asSyntax.Structure;
 import jason.runtime.Settings;
 
 
@@ -120,7 +121,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     
     public void updateMsgQueue(Message m)
     {
-    	localMsgQueue.offer(m);    		
+    	localMsgQueue.offer(m);       
     }
     
     public boolean getHasStarted()
@@ -168,7 +169,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     private void updatePercepts(String updateMode, Set<String> nafFunctors, Collection<Literal> newPercepts, Queue<Literal> perceptQueue) {
         //If updateMode is "add" (default option) and an identical percept is not already in the persistent queue, add the percept to the persistent queue
         if (updateMode.equals("add")) {
-            List<Literal> perceptsToAdd = new LinkedList<Literal>(newPercepts);
+            List<Literal> perceptsToAdd = new LinkedList<>(newPercepts);
             synchronized (perceptQueue) {
                 Iterator<Literal> it = perceptsToAdd.iterator();
                 while (it.hasNext()) {
@@ -271,8 +272,23 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
 
     // this method get the agent actions
     @Override
-    public void act(ActionExec action, List<ActionExec> feedback) {
-        JasonAction a = new JasonAction(action, feedback, getAgName());
+    public void act(ActionExec action) {
+        JasonAction a = new JasonAction(action, getAgName());
+        
+        Structure actionTerm = action.getActionTerm();
+        String functor = actionTerm.getFunctor();
+        int arity = actionTerm.getArity();
+        
+        if (functor.equals("true") && arity == 0) {
+            action.setResult(true);
+            actionExecuted(action);
+            return;
+        }
+        if (functor.equals("false") && arity == 0) {
+            action.setResult(false);
+            actionExecuted(action);
+            return;
+        }
         
         //Find all consumers that can handle "action"s
         List<AgentConsumer> actionCons = getValidConsumers("action");
@@ -281,7 +297,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
         if (actionCons.isEmpty())
         {
         	action.setResult(false);
-        	feedback.add(action);
+        	actionExecuted(action);
         }
         else
         {
@@ -293,22 +309,22 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
         		{        			
         			r = true;
         			action.setResult(true);
-                	feedback.add(action);
+                                actionExecuted(action);
                 	//break;
         		}        			
         	}
         	if (!r)
         	{
         		action.setResult(false);
-            	feedback.add(action);
+                        actionExecuted(action);
         	}
         }    		        
     }
 
     @Override
     public boolean canSleep() {
-       // return true;
-    	return localMsgQueue.isEmpty() && isRunning();
+        return false;
+    	//return localMsgQueue.isEmpty() && isRunning();
     }
 
     @Override
@@ -317,20 +333,19 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     }
 
     // a very simple implementation of sleep
-    @Override
     public void sleep() {
         try {
         Thread.sleep(100);
         } catch (InterruptedException e) {}
-    }    
+    }
     
     @Override
     public void sendMsg(jason.asSemantics.Message m) throws Exception {   
     	//Send to Camel exchange if the receipient name starts with container
         //if (m.getReceiver().startsWith("container"))
-    	{
-    		for(AgentConsumer myConsumer: getValidConsumers("message"))
-            	myConsumer.agentMessaged(m);
+        {
+            for(AgentConsumer myConsumer: getValidConsumers("message"))
+                myConsumer.agentMessaged(m);
     	}
     	//Else send as a local Jason message
     	//else
@@ -354,7 +369,7 @@ public class SimpleJasonAgent extends AgArch implements Serializable{
     public void checkMail() {
     	while (!localMsgQueue.isEmpty()) {
             Message im = localMsgQueue.poll();
-            getTS().getC().getMailBox().offer(im);            
+            getTS().getC().getMailBox().offer(im); 
         }
     }  
     

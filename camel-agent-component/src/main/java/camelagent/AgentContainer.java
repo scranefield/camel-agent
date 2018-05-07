@@ -196,11 +196,11 @@ public class AgentContainer {
 	
 	public void startAllAgents()
 	{
-		Enumeration<SimpleJasonAgent> e = getAgents().elements();
+	Enumeration<SimpleJasonAgent> e = getAgents().elements();
                 
         while (e.hasMoreElements()) {
- 	    	SimpleJasonAgent j = e.nextElement();	  	    	
- 	    	if (!j.getHasStarted())
+ 	    	SimpleJasonAgent j = e.nextElement();
+                if (!j.getHasStarted())
  	    		j.run();
  	    }
 	}
@@ -225,12 +225,13 @@ public class AgentContainer {
                 Iterator<SimpleJasonAgent> it = agentList.iterator();
                 for (; it.hasNext();) { 
                     SimpleJasonAgent a = it.next();
+                        
                     if (!receiver.equals("")) {
                         if (a.getAgName().equals(receiver)) {
                             a.updatePerceptList(content, annotations, updateMode, nafFunctors, persistent);
                         }
                     } else {
-                        System.out.println("Updating percepts for agent " + a.getAgName() + "; content = " + content);
+                        //System.out.println("Updating percepts for agent " + a.getAgName() + "; content = " + content);
                         a.updatePerceptList(content, annotations, updateMode, nafFunctors, persistent);
                     }
                 }
@@ -247,8 +248,7 @@ public class AgentContainer {
 	 * receive the messages from the camel exchange, and pass it to a particular agent or all the agents, based on the value of the receiver parameter
 	 */
 	public void getCamelMessages(Message message, String receiver)
-	{	
-		try
+	{	try
 		{	
 			Iterator<SimpleJasonAgent> it = agentList.iterator();
             for (; it.hasNext();)
@@ -264,8 +264,9 @@ public class AgentContainer {
 						a.updateMsgQueue(tm);
 					}
             	}
-            	else if (a.getAgName().equals(receiver))
-            		a.updateMsgQueue(message);
+            	else if (a.getAgName().equals(receiver)) {
+                        a.updateMsgQueue(message);
+                }
             }
 		}
 		catch(Exception e)

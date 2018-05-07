@@ -32,25 +32,17 @@ import java.util.List;
 public class JasonAction implements Serializable{
 	static final long serialVersionUID =1;
 	private ActionExec action;
-	private List<ActionExec> feedback;
 	private String agName;
 	
-	public JasonAction(ActionExec action, List<ActionExec> feedback, String agName)
+	public JasonAction(ActionExec action, String agName)
 	{
 		this.action = action;
-		this.feedback = feedback;
 		this.agName = agName;
 	}
 	
 	public ActionExec getAction()
 	{
 		return action;
-	}
-	
-	public void setFeedback(boolean b)
-	{
-		 action.setResult(b);
-		 feedback.add(action);
 	}	
 	
 	public String getAgName()

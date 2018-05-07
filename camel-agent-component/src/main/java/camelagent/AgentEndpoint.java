@@ -267,15 +267,13 @@ public class AgentEndpoint extends DefaultEndpoint {
      * Match and replace message content, using the uri information
      */
     public String getReplacedContent(Matcher matcher, String bodyContent)
-    {
-        System.out.println();
-        if (matcher == null) return bodyContent;
+    {   
+        if (matcher == null) { return bodyContent; }
 
         String matchedString;
     	
     	if (this.replace != null)
-        {
-
+        {   
                 matchedString = matcher.replaceFirst(this.replace);
 /*
     		String[] replaces = this.replace.split(",");
