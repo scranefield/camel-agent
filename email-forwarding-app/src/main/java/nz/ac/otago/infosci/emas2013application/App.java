@@ -43,7 +43,8 @@ public class App {
         final static String mailDomain = "otago.ac.nz";
 
 	 public static void main(String[] args) throws Exception {
-
+// NOTE: Need to create node /containers in ZooKeeper first!! ZooKeeperContainerNamingStrategy should do this for us (by parsing path)
+// See code in http://stackoverflow.com/questions/3340756/can-i-recursively-create-a-path-in-zookeeper
                 container = new AgentContainer(new ZookeeperContainerNamingStrategy("/containers/container", CreateMode.EPHEMERAL_SEQUENTIAL),
                                                App.class.getClassLoader(),
                                                App.class.getPackage());
@@ -67,7 +68,7 @@ public class App {
                 String zkServerProp;
 		try {
 			props.load(new FileInputStream("config.properties"));
-                        zkServerProp = props.getProperty("zookeeper_server");
+                        zkServerProp = props.getProperty("zookeeper_server1");
 		} catch (Exception e) {
 			zkServerProp = "127.0.0.1:2181";
 		}
