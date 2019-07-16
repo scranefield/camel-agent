@@ -6,7 +6,7 @@
   <groupId>nz.ac.otago.infosci.camelagent</groupId>
   <artifactId>parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.1.2</version>
+  <version>1.1.4</version>
   <name>Camel Agent Endpoint Parent Project</name>
 
   <modules>
